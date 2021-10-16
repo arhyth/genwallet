@@ -1,0 +1,7 @@
+version: '2'
+
+services:
+  genwallet:
+    build: .
+    depends_on:
+      - postgres

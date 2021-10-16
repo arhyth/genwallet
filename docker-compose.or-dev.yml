@@ -1,0 +1,32 @@
+version: '2'
+
+services:
+  genwallet:
+    build: .
+    container_name: genwallet
+    environment:
+      NAMESPACE: dev
+      DB_URL: 'postgres://postgres:postgres@postgres/genwallet_dev?sslmode=disable'
+    depends_on:
+      - postgres
+
+  postgres:
+    container_name: postgres
+    image: postgres:11
+
+  init-db:
+    image: golang:1.17
+    environment:
+      CGO_ENABLED: '0'
+      GO111MODULE: 'off'
+    command:
+      - /bin/bash
+      - -c
+      - |
+        go get -v github.com/pressly/goose/cmd/goose;
+        (cd migrations && goose postgres "postgres://postgres:postgres@postgres/genwallet_dev?sslmode=disable" up)
+    volumes:
+      - ./db/migrations:/migrations
+    working_dir: /db/migrations
+    depends_on:
+      - postgres
