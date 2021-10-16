@@ -13,6 +13,12 @@ services:
   postgres:
     container_name: postgres
     image: postgres:11
+    expose:
+      - '5432'
+    environment:
+      POSTGRES_DB: 'genwallet_dev'
+      POSTGRES_USER: 'postgres'
+      POSTGRES_PASSWORD: 'postgres'
 
   init-db:
     image: golang:1.17
@@ -24,9 +30,9 @@ services:
       - -c
       - |
         go get -v github.com/pressly/goose/cmd/goose;
-        (cd migrations && goose postgres "postgres://postgres:postgres@postgres/genwallet_dev?sslmode=disable" up)
+        (cd /migrations && goose postgres "postgres://postgres:postgres@postgres/postgres?sslmode=disable" up)
     volumes:
       - ./db/migrations:/migrations
-    working_dir: /db/migrations
+    working_dir: /migrations
     depends_on:
       - postgres
