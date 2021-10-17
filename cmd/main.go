@@ -1,26 +1,28 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
+	"github.com/arhyth/genwallet/config"
 	"github.com/arhyth/genwallet/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
 
 func main() {
-	var (
-		httpAddr = flag.String("ADDR_PORT", ":8000", "Address for HTTP (JSON) server")
-	)
-	flag.Parse()
-
 	// Logging
 	logger := zerolog.New(os.Stderr)
+
+	// Config
+	cfg, err := config.GetAPIConfig()
+	if err != nil {
+		logger.Fatal().Err(err).Msg("genwallet server start: config parse fail")
+	}
+	httpAddr := cfg.AddrPort
 
 	// Transport
 	r := chi.NewMux()
@@ -57,9 +59,9 @@ func main() {
 	go func() {
 		logger.Info().
 			Str("transport", "HTTP").
-			Str("addr", *httpAddr).
+			Str("addr", httpAddr).
 			Msg("genwallet server start")
-		errc <- http.ListenAndServe(*httpAddr, r)
+		errc <- http.ListenAndServe(httpAddr, r)
 	}()
 
 	logger.Err(<-errc).Msg("genwallet server exit")
