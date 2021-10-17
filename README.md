@@ -18,6 +18,10 @@ Roadmap
 - [ ] Integration tests
 - [ ] Dev setup conveniences (docker-compose etc)
 
+How it works
+---
+Genwallet works by recording to a single "global" ledger of `transfer`s between wallet `account`s. `Payment`s are simply representations of `transfer` with respect to an `account`.
+![how Genwallet works](./DB-entities.svg)
 
 API
 ---
@@ -42,8 +46,13 @@ Getting Started
 
 ### Development
 **Setup**
-- Run `go build -mod=vendor -o gw-bin cmd/main.go
+- Build `go build -mod=vendor -o gw-bin cmd/main.go`
 - Set environment variables as listed in section [`Config`](#config)
+- Run migrations if applicable
+```sh
+$ goose -dir migrations postgres <DB_URL> up
+```
+- Run `./gw-bin` with your set env vars
 
 ### Testing
 We make use of the standard library `testing` package as well as some small 3rd party helper packages such as [testify](https://github.com/stretchr/testify).
