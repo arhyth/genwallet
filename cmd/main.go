@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/arhyth/genwallet/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
 )
@@ -23,6 +24,26 @@ func main() {
 
 	// Transport
 	r := chi.NewMux()
+
+	ok := []byte("OK")
+	okHandler := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.Write(ok)
+	})
+	r.Get("/healthcheck", okHandler)
+
+	walletSvc := wallet.NewSimpleWalletService()
+	walletsIndexHandler := wallet.NewWalletListHandler(walletSvc)
+	walletGetHandler := wallet.NewWalletGetHandler(walletSvc)
+	walletCreateHandler := wallet.NewWalletCreateHandler(walletSvc)
+	walletPaymentsIndexHandler := wallet.NewWalletPaymentsIndexHandler(walletSvc)
+	walletPostPaymentHandler := wallet.NewWalletPostPaymentHandler(walletSvc)
+	ledgerHandler := wallet.NewWalletLedgerHandler(walletSvc)
+	r.Method("GET", "/wallets", walletsIndexHandler)
+	r.Method("POST", "/wallets", walletCreateHandler)
+	r.Method("GET", "/wallets/{id}", walletGetHandler)
+	r.Method("GET", "/wallets/{id}/payments", walletPaymentsIndexHandler)
+	r.Method("POST", "/wallets/{id}/payments", walletPostPaymentHandler)
+	r.Method("GET", "/transfers", ledgerHandler)
 
 	// Interrupt
 	errc := make(chan error)
