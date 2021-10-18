@@ -3,10 +3,12 @@ API
 
 ## List wallets
 Lists all wallet accounts in the system
+
 **Method**: `GET`
+
 **URL**: `/wallets`
 
-#### Success response
+### Success response
 **Status Code**: `200`
 ```json
 [
@@ -27,7 +29,7 @@ Lists all wallet accounts in the system
 ]
 ```
 
-#### Error response
+### Error response
 **Status Code**: `400 | 500`
 ```json
 {

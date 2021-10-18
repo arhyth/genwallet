@@ -1,7 +1,6 @@
 package wallet
 
 import (
-	"errors"
 	"time"
 )
 
@@ -15,10 +14,6 @@ const (
 	Outgoing
 )
 
-var (
-	ErrNotFound = errors.New("not found")
-)
-
 type Account struct {
 	ID        string    `json:"id"`
 	Balance   float64   `json:"balance"`
@@ -28,7 +23,10 @@ type Account struct {
 }
 
 // Note: The API seems a bit unintuitive since the business/domain model
-// is a bit confusing. Nevertheless, I tried to make it as simple as possible.
+// is a bit confusing; unsure if the `Service` interface should be broken
+// into 2 interfaces and how to model `transfer`s/`payment`s.
+// We could also propagate request context here but since we will not
+// be making use of cancellation or deadline, seems curently unnecessary.
 type Service interface {
 	List(ListRequest) ([]Account, error)
 	Get(GetRequest) (Account, error)
@@ -75,52 +73,8 @@ type TransferLedgerRequest struct {
 	Upto  *string
 }
 
-func NewSimpleWalletService() *SimpleService {
-	return &SimpleService{}
-}
-
-type SimpleService struct{}
-
-var _ Service = (*SimpleService)(nil)
-
-func (ws *SimpleService) Get(req GetRequest) (Account, error) {
-	return Account{
-		ID:       req.ID,
-		Balance:  100.0,
-		Currency: "USD",
-	}, nil
-}
-
 type ListRequest struct {
 	Currency *string
-}
-
-func (ws *SimpleService) List(req ListRequest) ([]Account, error) {
-	accounts := []Account{
-		{
-			ID:       "bob-1234",
-			Balance:  10000.0,
-			Currency: "JPY",
-		},
-		{
-			ID:       "alice-5678",
-			Balance:  100.0,
-			Currency: "USD",
-		},
-		{
-			ID:       "sato-91011",
-			Balance:  1000.0,
-			Currency: "CNY",
-		},
-	}
-
-	if req.Currency != nil {
-		for i := range accounts {
-			accounts[i].Currency = *req.Currency
-		}
-	}
-
-	return accounts, nil
 }
 
 type CreateRequest struct {
@@ -129,70 +83,72 @@ type CreateRequest struct {
 	Currency string  `json:"currency" `
 }
 
-func (ws *SimpleService) Create(req CreateRequest) (Account, error) {
-	now := time.Now().UTC()
-	return Account{
-		ID:        req.ID,
-		Balance:   req.InitAmt,
-		Currency:  req.Currency,
-		CreatedAt: now,
-		UpdatedAt: now,
-	}, nil
-}
-
-func (ws *SimpleService) Transfer(req PaymentRequest) (Payment, error) {
-	return Payment{
-		From:      req.From,
-		To:        req.To,
-		Amount:    req.Amount,
-		Direction: Outgoing,
-	}, nil
-}
-
 type ListPaymentsRequest struct {
 	ID string `json:"id"`
 }
 
-func (ws *SimpleService) ListPayments(req ListPaymentsRequest) ([]Payment, error) {
-	toother := "toOther123"
-	fromother := "fromOther123"
-	payments := []Payment{
-		{
-			From:      req.ID,
-			To:        toother,
-			Amount:    10.0,
-			Direction: Outgoing,
-		},
-		{
-			From:      fromother,
-			To:        req.ID,
-			Amount:    80.0,
-			Direction: Incoming,
-		},
+var _ Service = (*ServiceImpl)(nil)
+
+type ServiceImpl struct {
+	// Note: the Repo should in most instances be a separate interface. However,
+	// since genwallet operations are mostly CRUD and derive their concrete
+	// implementation from the database, we can simply use the same interface.
+	// Feel free to discuss and create a separate one when the need arises.
+	Repo Repository
+}
+
+func (ws *ServiceImpl) Get(req GetRequest) (Account, error) {
+	return ws.Repo.GetAccount(req)
+}
+
+func (ws *ServiceImpl) List(req ListRequest) ([]Account, error) {
+	return ws.Repo.ListAccounts(req)
+}
+
+func (ws *ServiceImpl) Create(req CreateRequest) (Account, error) {
+	return ws.Repo.CreateAccount(req)
+}
+
+func (ws *ServiceImpl) Transfer(req PaymentRequest) (Payment, error) {
+	return ws.Repo.CreateTransfer(req)
+}
+
+func (ws *ServiceImpl) ListPayments(req ListPaymentsRequest) ([]Payment, error) {
+	// Note: we make use of same method from the DB as for `TransferLedger`
+	// since `Payment`s are only a `Service` "domain object" and exist in the DB
+	// layer also as `Transfer`s
+	transferReq := TransferLedgerRequest{
+		From: &req.ID,
+		To:   &req.ID,
+	}
+
+	transfers, err := ws.Repo.ListTransfers(transferReq)
+	if err != nil {
+		return nil, err
+	}
+
+	payments := make([]Payment, len(transfers))
+	for i := range transfers {
+		p := Payment{
+			From:   transfers[i].From,
+			To:     transfers[i].To,
+			Amount: transfers[i].Amount,
+		}
+		if req.ID == transfers[i].From {
+			p.Direction = Outgoing
+		} else {
+			p.Direction = Incoming
+		}
+		payments[i] = p
 	}
 
 	return payments, nil
 }
 
-func (ws *SimpleService) TransferLedger(req TransferLedgerRequest) ([]Transfer, error) {
-	ben := "ben123"
-	alice := "alice456"
-	now := time.Now().UTC()
+func (ws *ServiceImpl) TransferLedger(req TransferLedgerRequest) ([]Transfer, error) {
+	// Note: since `From` and `To` work together as a `where... OR` query,
+	// it is up to the client component (e.g. web, mobile) to filter on their
+	// end for cases where the user explicitly wants a `where... AND`
 
-	transfers := []Transfer{
-		{
-			From:      ben,
-			To:        alice,
-			Amount:    10.0,
-			CreatedAt: now.AddDate(0, 1, 0),
-		},
-		{
-			From:      alice,
-			To:        ben,
-			Amount:    80.0,
-			CreatedAt: now.AddDate(0, 0, 20),
-		},
-	}
-
-	return transfers, nil
+	return ws.Repo.ListTransfers(req)
 }

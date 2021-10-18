@@ -5,8 +5,8 @@ import (
 )
 
 type APIConfig struct {
-	AddrPort string `endconfig:"ADDR_PORT" default:":8000"`
-	// DBConnStr string `envconfig:"DB_URL" required:"true"`
+	AddrPort  string `endconfig:"ADDR_PORT" default:":8000"`
+	DBConnStr string `envconfig:"DB_URL" required:"true"`
 }
 
 func GetAPIConfig() (APIConfig, error) {
