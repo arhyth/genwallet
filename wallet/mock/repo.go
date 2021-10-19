@@ -34,7 +34,7 @@ func (m *MockRepository) EXPECT() *MockRepositoryMockRecorder {
 }
 
 // ListAccounts mocks base method
-func (m *MockRepository) ListAccounts(arg0 wallet.ListRequest) ([]wallet.Account, error) {
+func (m *MockRepository) ListAccounts(arg0 wallet.ListAccountsRequest) ([]wallet.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListAccounts", arg0)
 	ret0, _ := ret[0].([]wallet.Account)
@@ -49,7 +49,7 @@ func (mr *MockRepositoryMockRecorder) ListAccounts(arg0 interface{}) *gomock.Cal
 }
 
 // GetAccount mocks base method
-func (m *MockRepository) GetAccount(arg0 wallet.GetRequest) (wallet.Account, error) {
+func (m *MockRepository) GetAccount(arg0 wallet.GetAccountRequest) (wallet.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "GetAccount", arg0)
 	ret0, _ := ret[0].(wallet.Account)
@@ -64,7 +64,7 @@ func (mr *MockRepositoryMockRecorder) GetAccount(arg0 interface{}) *gomock.Call 
 }
 
 // CreateAccount mocks base method
-func (m *MockRepository) CreateAccount(arg0 wallet.CreateRequest) (wallet.Account, error) {
+func (m *MockRepository) CreateAccount(arg0 wallet.CreateAccountRequest) (wallet.Account, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateAccount", arg0)
 	ret0, _ := ret[0].(wallet.Account)
@@ -79,10 +79,10 @@ func (mr *MockRepositoryMockRecorder) CreateAccount(arg0 interface{}) *gomock.Ca
 }
 
 // CreateTransfer mocks base method
-func (m *MockRepository) CreateTransfer(arg0 wallet.PaymentRequest) (wallet.Payment, error) {
+func (m *MockRepository) CreateTransfer(arg0 wallet.CreateTransferRequest) (wallet.Transfer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "CreateTransfer", arg0)
-	ret0, _ := ret[0].(wallet.Payment)
+	ret0, _ := ret[0].(wallet.Transfer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
@@ -94,7 +94,7 @@ func (mr *MockRepositoryMockRecorder) CreateTransfer(arg0 interface{}) *gomock.C
 }
 
 // ListTransfers mocks base method
-func (m *MockRepository) ListTransfers(arg0 wallet.TransferLedgerRequest) ([]wallet.Transfer, error) {
+func (m *MockRepository) ListTransfers(arg0 wallet.ListTransfersRequest) ([]wallet.Transfer, error) {
 	m.ctrl.T.Helper()
 	ret := m.ctrl.Call(m, "ListTransfers", arg0)
 	ret0, _ := ret[0].([]wallet.Transfer)

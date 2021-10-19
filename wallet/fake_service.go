@@ -12,7 +12,7 @@ type SimpleService struct{}
 
 var _ Service = (*SimpleService)(nil)
 
-func (ws *SimpleService) Get(req GetRequest) (Account, error) {
+func (ws *SimpleService) GetAccount(req GetAccountRequest) (Account, error) {
 	return Account{
 		ID:       req.ID,
 		Balance:  100.0,
@@ -20,7 +20,7 @@ func (ws *SimpleService) Get(req GetRequest) (Account, error) {
 	}, nil
 }
 
-func (ws *SimpleService) List(req ListRequest) ([]Account, error) {
+func (ws *SimpleService) ListAccounts(req ListAccountsRequest) ([]Account, error) {
 	accounts := []Account{
 		{
 			ID:       "bob-1234",
@@ -48,7 +48,7 @@ func (ws *SimpleService) List(req ListRequest) ([]Account, error) {
 	return accounts, nil
 }
 
-func (ws *SimpleService) Create(req CreateRequest) (Account, error) {
+func (ws *SimpleService) CreateAccount(req CreateAccountRequest) (Account, error) {
 	now := time.Now().UTC()
 	return Account{
 		ID:        req.ID,
@@ -59,10 +59,10 @@ func (ws *SimpleService) Create(req CreateRequest) (Account, error) {
 	}, nil
 }
 
-func (ws *SimpleService) Transfer(req PaymentRequest) (Payment, error) {
+func (ws *SimpleService) CreatePayment(req CreatePaymentRequest) (Payment, error) {
 	return Payment{
-		From:      req.From,
-		To:        req.To,
+		Self:      req.Self,
+		To:        &req.To,
 		Amount:    req.Amount,
 		Direction: Outgoing,
 	}, nil
@@ -73,14 +73,14 @@ func (ws *SimpleService) ListPayments(req ListPaymentsRequest) ([]Payment, error
 	fromother := "fromOther123"
 	payments := []Payment{
 		{
-			From:      req.ID,
-			To:        toother,
+			Self:      req.ID,
+			To:        &toother,
 			Amount:    10.0,
 			Direction: Outgoing,
 		},
 		{
-			From:      fromother,
-			To:        req.ID,
+			Self:      req.ID,
+			From:      &fromother,
 			Amount:    80.0,
 			Direction: Incoming,
 		},
@@ -89,7 +89,7 @@ func (ws *SimpleService) ListPayments(req ListPaymentsRequest) ([]Payment, error
 	return payments, nil
 }
 
-func (ws *SimpleService) TransferLedger(req TransferLedgerRequest) ([]Transfer, error) {
+func (ws *SimpleService) ListTransfers(req ListTransfersRequest) ([]Transfer, error) {
 	ben := "ben123"
 	alice := "alice456"
 	now := time.Now().UTC()

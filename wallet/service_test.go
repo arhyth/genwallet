@@ -24,7 +24,7 @@ func TestListAccounts(t *testing.T) {
 		svc := &wallet.ServiceImpl{
 			Repo: repo,
 		}
-		listReq := wallet.ListRequest{}
+		listReq := wallet.ListAccountsRequest{}
 		accounts := []wallet.Account{
 			{
 				ID:       "bob-1234",
@@ -47,7 +47,7 @@ func TestListAccounts(t *testing.T) {
 			Return(accounts, nil).
 			Times(1)
 
-		result, err := svc.List(listReq)
+		result, err := svc.ListAccounts(listReq)
 		as.Nil(err)
 		as.Len(result, len(accounts))
 	})
@@ -63,7 +63,7 @@ func TestGetAccount(t *testing.T) {
 		svc := &wallet.ServiceImpl{
 			Repo: repo,
 		}
-		getReq := wallet.GetRequest{}
+		getReq := wallet.GetAccountRequest{}
 		account := wallet.Account{
 			ID:       "sato-91011",
 			Balance:  1000.0,
@@ -74,7 +74,7 @@ func TestGetAccount(t *testing.T) {
 			Return(account, nil).
 			Times(1)
 
-		result, err := svc.Get(getReq)
+		result, err := svc.GetAccount(getReq)
 		as.Nil(err)
 		as.Equal(account.ID, result.ID)
 	})
@@ -90,11 +90,11 @@ func TestCreateAccount(t *testing.T) {
 		svc := &wallet.ServiceImpl{
 			Repo: repo,
 		}
-		createReq := wallet.CreateRequest{}
+		createReq := wallet.CreateAccountRequest{}
 		now := time.Now().UTC()
 		repo.EXPECT().
 			CreateAccount(gomock.AssignableToTypeOf(createReq)).
-			DoAndReturn(func(r wallet.CreateRequest) (wallet.Account, error) {
+			DoAndReturn(func(r wallet.CreateAccountRequest) (wallet.Account, error) {
 				return wallet.Account{
 					ID:        r.ID,
 					Balance:   r.InitAmt,
@@ -105,7 +105,7 @@ func TestCreateAccount(t *testing.T) {
 			}).
 			Times(1)
 
-		result, err := svc.Create(createReq)
+		result, err := svc.CreateAccount(createReq)
 		as.Nil(err)
 		as.Equal(result.ID, createReq.ID)
 		as.Equal(result.Balance, createReq.InitAmt)
@@ -129,7 +129,7 @@ func TestListPayments(t *testing.T) {
 			ID: "alice123",
 		}
 		now := time.Now().UTC()
-		listTransferReq := wallet.TransferLedgerRequest{
+		listTransferReq := wallet.ListTransfersRequest{
 			From: &listPReq.ID,
 			To:   &listPReq.ID,
 		}
@@ -155,8 +155,8 @@ func TestListPayments(t *testing.T) {
 		result, err := svc.ListPayments(listPReq)
 		as.Nil(err)
 		as.Len(result, len(transfers))
-		as.Equal(result[0].From, transfers[0].From)
-		as.Equal(result[0].To, transfers[0].To)
+		as.Equal(result[0].Self, transfers[0].From)
+		as.Equal(*result[0].To, transfers[0].To)
 		as.Equal(result[0].Direction, wallet.Outgoing)
 		as.Equal(result[1].Direction, wallet.Incoming)
 	})

@@ -14,26 +14,26 @@ type ValidationMiddleware struct {
 
 // TODO: implement validation :D
 
-func (vm *ValidationMiddleware) List(req ListRequest) ([]Account, error) {
-	return vm.Next.List(req)
+func (vm *ValidationMiddleware) ListAccounts(req ListAccountsRequest) ([]Account, error) {
+	return vm.Next.ListAccounts(req)
 }
 
-func (vm *ValidationMiddleware) Get(req GetRequest) (Account, error) {
-	return vm.Next.Get(req)
+func (vm *ValidationMiddleware) GetAccount(req GetAccountRequest) (Account, error) {
+	return vm.Next.GetAccount(req)
 }
 
-func (vm *ValidationMiddleware) Create(req CreateRequest) (Account, error) {
-	return vm.Next.Create(req)
+func (vm *ValidationMiddleware) CreateAccount(req CreateAccountRequest) (Account, error) {
+	return vm.Next.CreateAccount(req)
 }
 
 func (vm *ValidationMiddleware) ListPayments(req ListPaymentsRequest) ([]Payment, error) {
 	return vm.Next.ListPayments(req)
 }
 
-func (vm *ValidationMiddleware) Transfer(req PaymentRequest) (Payment, error) {
-	return vm.Next.Transfer(req)
+func (vm *ValidationMiddleware) CreatePayment(req CreatePaymentRequest) (Payment, error) {
+	return vm.Next.CreatePayment(req)
 }
 
-func (vm *ValidationMiddleware) TransferLedger(req TransferLedgerRequest) ([]Transfer, error) {
-	return vm.Next.TransferLedger(req)
+func (vm *ValidationMiddleware) ListTransfers(req ListTransfersRequest) ([]Transfer, error) {
+	return vm.Next.ListTransfers(req)
 }

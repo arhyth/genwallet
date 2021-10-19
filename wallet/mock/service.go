@@ -33,49 +33,49 @@ func (m *MockService) EXPECT() *MockServiceMockRecorder {
 	return m.recorder
 }
 
-// List mocks base method
-func (m *MockService) List(arg0 wallet.ListRequest) ([]wallet.Account, error) {
+// ListAccounts mocks base method
+func (m *MockService) ListAccounts(arg0 wallet.ListAccountsRequest) ([]wallet.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "List", arg0)
+	ret := m.ctrl.Call(m, "ListAccounts", arg0)
 	ret0, _ := ret[0].([]wallet.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// List indicates an expected call of List
-func (mr *MockServiceMockRecorder) List(arg0 interface{}) *gomock.Call {
+// ListAccounts indicates an expected call of ListAccounts
+func (mr *MockServiceMockRecorder) ListAccounts(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "List", reflect.TypeOf((*MockService)(nil).List), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListAccounts", reflect.TypeOf((*MockService)(nil).ListAccounts), arg0)
 }
 
-// Get mocks base method
-func (m *MockService) Get(arg0 wallet.GetRequest) (wallet.Account, error) {
+// GetAccount mocks base method
+func (m *MockService) GetAccount(arg0 wallet.GetAccountRequest) (wallet.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Get", arg0)
+	ret := m.ctrl.Call(m, "GetAccount", arg0)
 	ret0, _ := ret[0].(wallet.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Get indicates an expected call of Get
-func (mr *MockServiceMockRecorder) Get(arg0 interface{}) *gomock.Call {
+// GetAccount indicates an expected call of GetAccount
+func (mr *MockServiceMockRecorder) GetAccount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockService)(nil).Get), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetAccount", reflect.TypeOf((*MockService)(nil).GetAccount), arg0)
 }
 
-// Create mocks base method
-func (m *MockService) Create(arg0 wallet.CreateRequest) (wallet.Account, error) {
+// CreateAccount mocks base method
+func (m *MockService) CreateAccount(arg0 wallet.CreateAccountRequest) (wallet.Account, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Create", arg0)
+	ret := m.ctrl.Call(m, "CreateAccount", arg0)
 	ret0, _ := ret[0].(wallet.Account)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Create indicates an expected call of Create
-func (mr *MockServiceMockRecorder) Create(arg0 interface{}) *gomock.Call {
+// CreateAccount indicates an expected call of CreateAccount
+func (mr *MockServiceMockRecorder) CreateAccount(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Create", reflect.TypeOf((*MockService)(nil).Create), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateAccount", reflect.TypeOf((*MockService)(nil).CreateAccount), arg0)
 }
 
 // ListPayments mocks base method
@@ -93,32 +93,32 @@ func (mr *MockServiceMockRecorder) ListPayments(arg0 interface{}) *gomock.Call {
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListPayments", reflect.TypeOf((*MockService)(nil).ListPayments), arg0)
 }
 
-// Transfer mocks base method
-func (m *MockService) Transfer(arg0 wallet.PaymentRequest) (wallet.Payment, error) {
+// CreatePayment mocks base method
+func (m *MockService) CreatePayment(arg0 wallet.CreatePaymentRequest) (wallet.Payment, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "Transfer", arg0)
+	ret := m.ctrl.Call(m, "CreatePayment", arg0)
 	ret0, _ := ret[0].(wallet.Payment)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Transfer indicates an expected call of Transfer
-func (mr *MockServiceMockRecorder) Transfer(arg0 interface{}) *gomock.Call {
+// CreatePayment indicates an expected call of CreatePayment
+func (mr *MockServiceMockRecorder) CreatePayment(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Transfer", reflect.TypeOf((*MockService)(nil).Transfer), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreatePayment", reflect.TypeOf((*MockService)(nil).CreatePayment), arg0)
 }
 
-// TransferLedger mocks base method
-func (m *MockService) TransferLedger(arg0 wallet.TransferLedgerRequest) ([]wallet.Transfer, error) {
+// ListTransfers mocks base method
+func (m *MockService) ListTransfers(arg0 wallet.ListTransfersRequest) ([]wallet.Transfer, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "TransferLedger", arg0)
+	ret := m.ctrl.Call(m, "ListTransfers", arg0)
 	ret0, _ := ret[0].([]wallet.Transfer)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// TransferLedger indicates an expected call of TransferLedger
-func (mr *MockServiceMockRecorder) TransferLedger(arg0 interface{}) *gomock.Call {
+// ListTransfers indicates an expected call of ListTransfers
+func (mr *MockServiceMockRecorder) ListTransfers(arg0 interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "TransferLedger", reflect.TypeOf((*MockService)(nil).TransferLedger), arg0)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ListTransfers", reflect.TypeOf((*MockService)(nil).ListTransfers), arg0)
 }
