@@ -3,103 +3,55 @@ package wallet
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"net/http"
 	"regexp"
 
+	"github.com/arhyth/genwallet/errorrrs"
 	"github.com/go-kit/kit/endpoint"
-	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 var (
 	rgxpWalletsIDPayments = regexp.MustCompile(`/wallets/([\w-]+)/payments`)
 	rgxpWalletsID         = regexp.MustCompile(`/wallets/([\w-]+)`)
-
-	errBadRequest = errors.New("bad request")
 )
 
-func NewWalletListHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makeWalletListEndpt(walletSvc),
-		decodeListReqFunc,
-		encodeResFunc,
-	)
-}
+// Go-kit http transport signature funcs
 
-func NewWalletGetHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makeWalletGetEndpt(walletSvc),
-		decodeGetReqFunc,
-		encodeResFunc,
-	)
-}
-
-func NewWalletCreateHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makeWalletCreateEndpt(walletSvc),
-		decodeCreateReqFunc,
-		encodeResFunc,
-	)
-}
-
-func NewWalletPaymentsIndexHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makePaymentsIndexEndpt(walletSvc),
-		decodeListPaymentsReqFunc,
-		encodeResFunc,
-	)
-}
-
-func NewWalletPostPaymentHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makePaymentsPostEndpt(walletSvc),
-		decodePostPaymentsReqFunc,
-		encodeResFunc,
-	)
-}
-
-func NewWalletLedgerHandler(walletSvc Service) *httptransport.Server {
-	return httptransport.NewServer(
-		makeLedgerEndpt(walletSvc),
-		decodeLedgerReqFunc,
-		encodeResFunc,
-	)
-}
-
-// go-kit helper funcs
-
-func makeWalletGetEndpt(svc Service) endpoint.Endpoint {
+func MakeWalletGetEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(GetRequest)
-		return svc.Get(req)
+		req := request.(GetAccountRequest)
+		return svc.GetAccount(req)
 	}
 }
 
-func decodeGetReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
-	var getReq GetRequest
+func DecodeHTTPGetAccountReq(_ context.Context, req *http.Request) (interface{}, error) {
+	var getReq GetAccountRequest
 	match := rgxpWalletsID.FindStringSubmatch(req.URL.Path)
 	if len(match) < 2 {
-		return nil, errBadRequest
+		return nil, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "malformed path: should be of `/wallets/{id}` format",
+		}
 	}
 	getReq.ID = match[1]
 
 	return getReq, nil
 }
 
-func encodeResFunc(_ context.Context, w http.ResponseWriter, resp interface{}) error {
+func EncodeJSONResponse(_ context.Context, w http.ResponseWriter, resp interface{}) error {
 	w.Header().Add("Content-Type", "application/json")
 	return json.NewEncoder(w).Encode(resp)
 }
 
-func makeWalletListEndpt(svc Service) endpoint.Endpoint {
+func MakeWalletListEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(ListRequest)
-		return svc.List(req)
+		req := request.(ListAccountsRequest)
+		return svc.ListAccounts(req)
 	}
 }
 
-func decodeListReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
-	var listReq ListRequest
+func DecodeHTTPListAccountsReq(_ context.Context, req *http.Request) (interface{}, error) {
+	var listReq ListAccountsRequest
 	cur := req.URL.Query().Get("currency")
 	if cur != "" {
 		listReq.Currency = &cur
@@ -108,15 +60,15 @@ func decodeListReqFunc(_ context.Context, req *http.Request) (interface{}, error
 	return listReq, nil
 }
 
-func makeWalletCreateEndpt(svc Service) endpoint.Endpoint {
+func MakeWalletCreateEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(CreateRequest)
-		return svc.Create(req)
+		req := request.(CreateAccountRequest)
+		return svc.CreateAccount(req)
 	}
 }
 
-func decodeCreateReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
-	var createReq CreateRequest
+func DecodeHTTPCreateAccountReq(_ context.Context, req *http.Request) (interface{}, error) {
+	var createReq CreateAccountRequest
 	if err := json.NewDecoder(req.Body).Decode(&createReq); err != nil {
 		return nil, err
 	}
@@ -124,70 +76,71 @@ func decodeCreateReqFunc(_ context.Context, req *http.Request) (interface{}, err
 	return createReq, nil
 }
 
-func makePaymentsIndexEndpt(svc Service) endpoint.Endpoint {
+func MakePaymentsIndexEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
 		req := request.(ListPaymentsRequest)
 		return svc.ListPayments(req)
 	}
 }
 
-func decodeListPaymentsReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
+func DecodeHTTPListPaymentsReq(_ context.Context, req *http.Request) (interface{}, error) {
 	var listPayments ListPaymentsRequest
 	match := rgxpWalletsIDPayments.FindStringSubmatch(req.URL.Path)
 	if len(match) < 2 {
-		return nil, errBadRequest
+		return nil, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "malformed path: should be of `/wallets/{id}/payments` format",
+		}
 	}
 	listPayments.ID = match[1]
 
 	return listPayments, nil
 }
 
-func makePaymentsPostEndpt(svc Service) endpoint.Endpoint {
+func MakePaymentsPostEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(PaymentRequest)
-		return svc.Transfer(req)
+		req := request.(CreatePaymentRequest)
+		return svc.CreatePayment(req)
 	}
 }
 
-func decodePostPaymentsReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
-	var paymentReq PaymentRequest
+func DecodeHTTPPostPaymentsReq(_ context.Context, req *http.Request) (interface{}, error) {
+	var paymentReq CreatePaymentRequest
 	if err := json.NewDecoder(req.Body).Decode(&paymentReq); err != nil {
-		return nil, err
+		return nil, &errorrrs.E{
+			ID:  errorrrs.InternalServerError,
+			Msg: err.Error(),
+		}
 	}
 	match := rgxpWalletsIDPayments.FindStringSubmatch(req.URL.Path)
 	if len(match) < 2 {
-		return nil, errBadRequest
+		return nil, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "malformed path: should be of `/wallets/{id}/payments` format",
+		}
 	}
-	paymentReq.From = match[1]
+	paymentReq.Self = match[1]
 
 	return paymentReq, nil
 }
 
-func makeLedgerEndpt(svc Service) endpoint.Endpoint {
+func MakeListTransfersEndpt(svc Service) endpoint.Endpoint {
 	return func(_ context.Context, request interface{}) (interface{}, error) {
-		req := request.(TransferLedgerRequest)
-		return svc.TransferLedger(req)
+		req := request.(ListTransfersRequest)
+		return svc.ListTransfers(req)
 	}
 }
 
-func decodeLedgerReqFunc(_ context.Context, req *http.Request) (interface{}, error) {
-	var ledgerReq TransferLedgerRequest
-	from := req.URL.Query().Get("from_id")
+func DecodeHTTPListTransfersReq(_ context.Context, req *http.Request) (interface{}, error) {
+	var listReq ListTransfersRequest
+	from := req.URL.Query().Get("from")
 	if from != "" {
-		ledgerReq.From = &from
+		listReq.From = &from
 	}
-	to := req.URL.Query().Get("to_id")
+	to := req.URL.Query().Get("to")
 	if to != "" {
-		ledgerReq.To = &to
-	}
-	since := req.URL.Query().Get("since")
-	if since != "" {
-		ledgerReq.Since = &since
-	}
-	upto := req.URL.Query().Get("upto")
-	if from != "" {
-		ledgerReq.Upto = &upto
+		listReq.To = &to
 	}
 
-	return ledgerReq, nil
+	return listReq, nil
 }

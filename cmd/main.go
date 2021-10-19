@@ -8,9 +8,12 @@ import (
 	"syscall"
 
 	"github.com/arhyth/genwallet/config"
+	"github.com/arhyth/genwallet/errorrrs"
 	"github.com/arhyth/genwallet/wallet"
 	"github.com/go-chi/chi/v5"
 	"github.com/rs/zerolog"
+
+	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 func main() {
@@ -33,13 +36,51 @@ func main() {
 	})
 	r.Get("/healthcheck", okHandler)
 
-	walletSvc := wallet.NewSimpleWalletService()
-	walletsIndexHandler := wallet.NewWalletListHandler(walletSvc)
-	walletGetHandler := wallet.NewWalletGetHandler(walletSvc)
-	walletCreateHandler := wallet.NewWalletCreateHandler(walletSvc)
-	walletPaymentsIndexHandler := wallet.NewWalletPaymentsIndexHandler(walletSvc)
-	walletPostPaymentHandler := wallet.NewWalletPostPaymentHandler(walletSvc)
-	ledgerHandler := wallet.NewWalletLedgerHandler(walletSvc)
+	repo, err := wallet.NewRepo(cfg.DBConnStr)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("genwallet server start: wallet.NewRepo")
+	}
+	walletSvc := &wallet.ServiceImpl{
+		Repo: repo,
+	}
+
+	serverErrcoder := httptransport.ServerErrorEncoder(errorrrs.GokitErrorEncoder)
+	walletsIndexHandler := httptransport.NewServer(
+		wallet.MakeWalletListEndpt(walletSvc),
+		wallet.DecodeHTTPListAccountsReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
+	walletGetHandler := httptransport.NewServer(
+		wallet.MakeWalletGetEndpt(walletSvc),
+		wallet.DecodeHTTPGetAccountReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
+	walletCreateHandler := httptransport.NewServer(
+		wallet.MakeWalletCreateEndpt(walletSvc),
+		wallet.DecodeHTTPCreateAccountReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
+	walletPaymentsIndexHandler := httptransport.NewServer(
+		wallet.MakePaymentsIndexEndpt(walletSvc),
+		wallet.DecodeHTTPListPaymentsReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
+	walletPostPaymentHandler := httptransport.NewServer(
+		wallet.MakePaymentsPostEndpt(walletSvc),
+		wallet.DecodeHTTPPostPaymentsReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
+	ledgerHandler := httptransport.NewServer(
+		wallet.MakeListTransfersEndpt(walletSvc),
+		wallet.DecodeHTTPListTransfersReq,
+		wallet.EncodeJSONResponse,
+		serverErrcoder,
+	)
 	r.Method("GET", "/wallets", walletsIndexHandler)
 	r.Method("POST", "/wallets", walletCreateHandler)
 	r.Method("GET", "/wallets/{id}", walletGetHandler)
