@@ -3,20 +3,20 @@ Genwallet
 
 Genwallet is a generic wallet service with a REST API. It is implemented in Go, makes use of [go-kit](https://github.com/go-kit/kit) components when possible[^*], and follows DDD.
 
-It is designed to be a stateless service so that it can be scaled to multiple instances without the overhead of some "control plane".
+Genwallet codebase has minimal number of concepts/mechanisms. This is not a requirement or objective but we try to introduce as little indirection as possible in order to achieve the least amount of coupling.
 
-Genwallet codebase has minimal number of types. This is not a requirement or objective but we try to introduce as little indirection as possible in order to achieve the least amount of coupling.
+All of its endpoints offer a synchronous API including payment transactions. This design choice provides predictability to the user. This is both a pro and a con. In a sync system, the user immediately knows if the system is slow or when it encounters an error. But in an otherwise async system, initial interactions such as submitting a payment request will almost always succeed but as the system hits a bottleneck somewhere, the lack of backpressure can "bury" the system into a failure loop.
 
-All account/wallet transactions in Genwallet are processed and kept in a postgreSQL backed repository. Concurrent account processes are guaranteed equivalent to some serial order with use of `Serializable` isolation level. There is some performance penalty incurred for this as concurrent transactions targeting similar row/s will fail except for the succeeding one. For simplicity, it is left to the API user to retry the request.
+Genwallet is also designed to be a stateless service so that it can be scaled to multiple instances without the overhead of some "control plane". All account/wallet transactions in Genwallet are handled by a postgreSQL database. Concurrent account processes are guaranteed equivalent to some serial order with use of `Serializable` isolation level. There is some performance penalty incurred for this as concurrent transactions targeting similar row/s will fail except for the succeeding one. For simplicity, it is left to the API user to retry the request. This also serves as a feedback mechanism.
 
 Roadmap
 ---
 - [x] Design and documentation
 - [x] Skeleton and fake service implementation
-- [ ] Request validation
-- [ ] Error handling
+- [x] Request validation
+- [x] Error handling
 - [ ] Unit tests
-- [ ] Service implementation (postgres backed)
+- [x] Service implementation (postgres backed)
 - [ ] Integration tests
 - [ ] Dev setup conveniences (docker-compose etc)
 
@@ -43,21 +43,23 @@ Details of request and response structure for each endpoint are listed in [separ
 Getting Started
 ---
 ### Config
+
 - **ADDR_PORT** : `address:port` where service listens (defaults to `:8000`)
 - **DB_URL** (required) : postgres database connection string
 
 ### Development
-*This is a WIP. No implementation done yet on the DB/repository layer.*
+
 **Setup**
 - Build `go build -mod=vendor -o gw-bin cmd/main.go`
 - Set environment variables as listed in section [`Config`](#config)
 - Run migrations if applicable. Migrations are written for [`goose`](https://github.com/pressly/goose)
 ```sh
-$ goose -dir migrations postgres <DB_URL> up
+$ goose -dir db/migrations postgres <DB_URL> up
 ```
 - Run `./gw-bin` with your set env vars
 
 ### Testing
+
 We make use of the standard library `testing` package as well as some small 3rd party helper packages such as [testify](https://github.com/stretchr/testify).
 Tests that require setup of dependencies must be kept separate to default `go test` call by using Go build tags. This establishes some bias against complexity and allows anyone new to the project to contribute and add corresponding unit tests without burdening them to setup dependencies for unrelated tests.
 
