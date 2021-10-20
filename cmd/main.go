@@ -40,8 +40,11 @@ func main() {
 	if err != nil {
 		logger.Fatal().Err(err).Msg("genwallet server start: wallet.NewRepo")
 	}
-	walletSvc := &wallet.ServiceImpl{
-		Repo: repo,
+
+	walletSvc := &wallet.ValidationMiddleware{
+		Next: &wallet.ServiceImpl{
+			Repo: repo,
+		},
 	}
 
 	serverErrcoder := httptransport.ServerErrorEncoder(errorrrs.GokitErrorEncoder)

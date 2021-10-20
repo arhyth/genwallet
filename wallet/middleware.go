@@ -1,6 +1,9 @@
 package wallet
 
-import "github.com/rs/zerolog"
+import (
+	"github.com/arhyth/genwallet/errorrrs"
+	"github.com/rs/zerolog"
+)
 
 var _ Service = (*ValidationMiddleware)(nil)
 
@@ -12,8 +15,6 @@ type ValidationMiddleware struct {
 	Logger *zerolog.Logger
 }
 
-// TODO: implement validation :D
-
 func (vm *ValidationMiddleware) ListAccounts(req ListAccountsRequest) ([]Account, error) {
 	return vm.Next.ListAccounts(req)
 }
@@ -23,6 +24,13 @@ func (vm *ValidationMiddleware) GetAccount(req GetAccountRequest) (Account, erro
 }
 
 func (vm *ValidationMiddleware) CreateAccount(req CreateAccountRequest) (Account, error) {
+	if _, exist := ValidCurrencies[req.Currency]; !exist {
+		return Account{}, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "invalid currency",
+		}
+	}
+
 	return vm.Next.CreateAccount(req)
 }
 
@@ -31,6 +39,24 @@ func (vm *ValidationMiddleware) ListPayments(req ListPaymentsRequest) ([]Payment
 }
 
 func (vm *ValidationMiddleware) CreatePayment(req CreatePaymentRequest) (Payment, error) {
+	// Note: we can check here if payee and payer wallet currencies match by adding
+	// a dependency to wallet.Repository. However, since balance access and updates still need
+	// to be serialized we just piggyback currency matching validation on the transaction.
+
+	if req.Self == req.To {
+		return Payment{}, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "transfer recipient is same wallet",
+		}
+	}
+
+	if req.Amount == 0 {
+		return Payment{}, &errorrrs.E{
+			ID:  errorrrs.BadRequest,
+			Msg: "transfer amount is `0`",
+		}
+	}
+
 	return vm.Next.CreatePayment(req)
 }
 
