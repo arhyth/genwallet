@@ -219,8 +219,8 @@ func (r *Repo) CreateTransfer(req CreateTransferRequest) (Transfer, error) {
 		return trnsfr, err
 	}
 
-	err = tx.QueryRow(`INSERT INTO transfers ("from", "to", amount)
-	VALUES ($1, $2, $3) RETURNING id, created_at;`, req.From, req.To, req.Amount).
+	err = tx.QueryRow(`INSERT INTO transfers ("from", "to", currency, amount)
+	VALUES ($1, $2, $3, $4) RETURNING id, created_at;`, req.From, req.To, fromCur, req.Amount).
 		Scan(&trnsfr.ID, &trnsfr.CreatedAt)
 	if err != nil {
 		rbErr = tx.Rollback()
@@ -233,6 +233,7 @@ func (r *Repo) CreateTransfer(req CreateTransferRequest) (Transfer, error) {
 	trnsfr.Amount = req.Amount
 	trnsfr.From = req.From
 	trnsfr.To = req.To
+	trnsfr.Currency = fromCur
 
 	return trnsfr, nil
 }
@@ -240,18 +241,33 @@ func (r *Repo) CreateTransfer(req CreateTransferRequest) (Transfer, error) {
 func (r *Repo) ListTransfers(req ListTransfersRequest) ([]Transfer, error) {
 	// TODO: add pagination
 
-	listTrnsfrBase := `SELECT "from", "to", amount, created_at
+	listTrnsfrBase := `SELECT id, "from", "to", amount, currency, created_at
 	FROM transfers %v;`
 	var whereClause string
 
-	if req.From == nil || req.To == nil {
-		if req.From != nil {
-			whereClause = fmt.Sprintf(`WHERE "from" = '%v'`, *req.From)
-		} else if req.To != nil {
-			whereClause = fmt.Sprintf(`WHERE "to" = '%v'`, *req.From)
+	// TODO: use string builder, if possible, to optimize
+	if req.Currency != nil {
+		whereClause = fmt.Sprintf(`WHERE currency = '%v'`, req.Currency)
+
+		if req.From == nil || req.To == nil {
+			if req.From != nil {
+				whereClause = fmt.Sprintf(` AND WHERE "from" = '%v'`, *req.From)
+			} else if req.To != nil {
+				whereClause = fmt.Sprintf(` AND WHERE "to" = '%v'`, *req.From)
+			}
+		} else {
+			whereClause = fmt.Sprintf(` AND WHERE "from" = '%v' OR "to" = '%v'`, *req.From, *req.To)
 		}
 	} else {
-		whereClause = fmt.Sprintf(`WHERE "from" = '%v' OR "to" = '%v'`, *req.From, *req.To)
+		if req.From == nil || req.To == nil {
+			if req.From != nil {
+				whereClause = fmt.Sprintf(`WHERE "from" = '%v'`, *req.From)
+			} else if req.To != nil {
+				whereClause = fmt.Sprintf(`WHERE "to" = '%v'`, *req.From)
+			}
+		} else {
+			whereClause = fmt.Sprintf(`WHERE "from" = '%v' OR "to" = '%v'`, *req.From, *req.To)
+		}
 	}
 
 	query := fmt.Sprintf(listTrnsfrBase, whereClause)
@@ -263,7 +279,13 @@ func (r *Repo) ListTransfers(req ListTransfersRequest) ([]Transfer, error) {
 	var transfers []Transfer
 	for rows.Next() {
 		var trnsfr Transfer
-		if err := rows.Scan(&trnsfr.From, &trnsfr.To, &trnsfr.Amount, &trnsfr.CreatedAt); err != nil {
+		if err := rows.Scan(&trnsfr.ID,
+			&trnsfr.From,
+			&trnsfr.To,
+			&trnsfr.Amount,
+			&trnsfr.Currency,
+			&trnsfr.CreatedAt); err != nil {
+
 			return nil, err
 		}
 

@@ -161,3 +161,44 @@ func TestListPayments(t *testing.T) {
 		as.Equal(result[1].Direction, wallet.Incoming)
 	})
 }
+
+func TestCreatePayment(t *testing.T) {
+	t.Run("success", func(tt *testing.T) {
+		as := assert.New(tt)
+		ctrl := gomock.NewController(tt)
+		defer ctrl.Finish()
+		repo := MOCKWALLET.NewMockRepository(ctrl)
+
+		svc := &wallet.ServiceImpl{
+			Repo: repo,
+		}
+		bob := "bob456"
+		createPReq := wallet.CreatePaymentRequest{
+			Self:   "alice123",
+			To:     bob,
+			Amount: 80,
+		}
+		now := time.Now().UTC()
+		createTransferRequest := wallet.CreateTransferRequest{
+			From:   createPReq.Self,
+			To:     createPReq.To,
+			Amount: createPReq.Amount,
+		}
+		trnsfr := wallet.Transfer{
+			From:      "alice123",
+			To:        "bob456",
+			Amount:    80.0,
+			CreatedAt: now.AddDate(0, -1, 0),
+		}
+		repo.EXPECT().
+			CreateTransfer(createTransferRequest).
+			Return(trnsfr, nil).
+			Times(1)
+
+		result, err := svc.CreatePayment(createPReq)
+		as.Nil(err)
+		as.Equal(result.Self, createPReq.Self)
+		as.Equal(*result.To, createPReq.To)
+		as.Equal(result.Direction, wallet.Outgoing)
+	})
+}

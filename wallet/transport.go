@@ -133,6 +133,10 @@ func MakeListTransfersEndpt(svc Service) endpoint.Endpoint {
 
 func DecodeHTTPListTransfersReq(_ context.Context, req *http.Request) (interface{}, error) {
 	var listReq ListTransfersRequest
+	currency := req.URL.Query().Get("currency")
+	if currency != "" {
+		listReq.Currency = &currency
+	}
 	from := req.URL.Query().Get("from")
 	if from != "" {
 		listReq.From = &from

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/arhyth/genwallet/errorrrs"
@@ -46,12 +47,12 @@ const (
 )
 
 var (
-	incomingJSON, _ = json.Marshal("Incoming")
-	outgoingJSON, _ = json.Marshal("Outgoing")
+	incomingJSON, _ = json.Marshal("incoming")
+	outgoingJSON, _ = json.Marshal("outgoing")
 )
 
-func (et *EntryType) MarshalJSON() ([]byte, error) {
-	switch *et {
+func (et EntryType) MarshalJSON() ([]byte, error) {
+	switch et {
 	case Incoming:
 		return incomingJSON, nil
 	case Outgoing:
@@ -59,6 +60,18 @@ func (et *EntryType) MarshalJSON() ([]byte, error) {
 	default:
 		return nil, errors.New("undefined EntryType(Direction)")
 	}
+}
+
+func (et *EntryType) UnmarshalJSON(data []byte) error {
+	if string(data) == string(incomingJSON) {
+		*et = Incoming
+	} else if string(data) == string(outgoingJSON) {
+		*et = Outgoing
+	} else {
+		return fmt.Errorf("unhandled direction: %v", data)
+	}
+
+	return nil
 }
 
 type Payment struct {
@@ -71,17 +84,18 @@ type Payment struct {
 }
 
 type Transfer struct {
-	ID        int
-	From      string
-	To        string
-	Amount    float64
-	CreatedAt time.Time
+	ID        int       `json:"id"`
+	From      string    `json:"from"`
+	To        string    `json:"to"`
+	Currency  string    `json:"currency"`
+	Amount    float64   `json:"amount"`
+	CreatedAt time.Time `json:"created_at"`
 }
 
 type ListTransfersRequest struct {
-	// wallet/account IDs
-	From *string
-	To   *string
+	Currency *string
+	From     *string
+	To       *string
 }
 
 type ListAccountsRequest struct {
@@ -172,7 +186,7 @@ func (ws *ServiceImpl) CreatePayment(req CreatePaymentRequest) (Payment, error) 
 		}
 	}
 
-	pymt.From = &transfer.From
+	pymt.Self = transfer.From
 	pymt.To = &transfer.To
 	pymt.Amount = transfer.Amount
 	pymt.Direction = Outgoing
@@ -217,16 +231,15 @@ func (ws *ServiceImpl) ListPayments(req ListPaymentsRequest) ([]Payment, error) 
 }
 
 func (ws *ServiceImpl) ListTransfers(req ListTransfersRequest) ([]Transfer, error) {
-	// Note: since `From` and `To` work together as a `where... OR` query,
-	// it is up to the client component (e.g. web, mobile) to filter on their
-	// end for cases where the user explicitly wants a `where... AND`
-
 	trnsfrs, err := ws.Repo.ListTransfers(req)
 	if err != nil {
 		return nil, &errorrrs.E{
 			ID:  errorrrs.InternalServerError,
 			Msg: err.Error(),
 		}
+	}
+	if trnsfrs == nil {
+		trnsfrs = []Transfer{}
 	}
 
 	return trnsfrs, err

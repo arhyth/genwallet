@@ -15,14 +15,14 @@ Roadmap
 - [x] Skeleton and fake service implementation
 - [x] Request validation
 - [x] Error handling
-- [ ] Unit tests
+- [x] Unit tests (needs a lot more work tbh)
 - [x] Service implementation (postgres backed)
 - [ ] Integration tests
 - [ ] Dev setup conveniences (docker-compose etc)
 
 How it works
 ---
-Genwallet works by recording to a single "global" ledger of `transfer`s between wallet `account`s. `Payment`s are simply representations of `transfer` with respect to an `account`.
+Genwallet works by recording to a single "global" ledger of `transfer`s between wallet `account`s. `Payment`s are simply representations of `transfer` with respect to an `account`. In a production service, wallet `account`s could benefit from partitioning by currency but for simplicity, Genwallet uses only a single table.
 ![how Genwallet works](./DB-entities.svg)
 
 API
